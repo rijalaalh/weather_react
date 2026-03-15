@@ -12,7 +12,6 @@ export default function Weather_eng() {
   const { temps, name, max, min, desc, icon, date, isloding } =
     useContext(weather_data);
   const navigate = useNavigate();
-  console.log("loading:"+" "+isloding)
   return (
     <div className='box'>
       {isloding ?

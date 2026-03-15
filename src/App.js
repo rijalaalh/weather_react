@@ -1,3 +1,9 @@
+/**
+ * eslint-disable react-hooks/rules-of-hooks
+ *
+ * @format
+ */
+
 /** @format */
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'moment/min/locales';
@@ -11,6 +17,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 import moment from 'moment';
 import { changevalue } from './features/counter/countreSlice';
+import { Prev } from 'react-bootstrap/esm/PageItem';
 let cancelAxios = null;
 let weather_elements = {
   name: '',
@@ -27,69 +34,53 @@ let weather_elements = {
 function App() {
   const dispatch = useDispatch();
   const result = useSelector((state) => state.weather.value);
-  console.log(result);
   const [weadther, setTemp] = useState(weather_elements);
-  const [lot, setLot] = useState(null);
-  const [lat, setLat] = useState(null);
+  const [lotAndLat, setLotAndlat] = useState({
+    lot: null,
+    lat: null,
+  });
   const isloading = useSelector((state) => state.weather.isloding);
   useEffect(() => {
-    setTemp({ ...weadther, isloding: isloading });
-  },[isloading]);
-  console.log(weadther.isloding)
+    setTemp((prev) => ({ ...prev, isloding: isloading }));
+  }, [isloading]);
   useEffect(() => {
     const date_ar = moment().locale('ar').format('dddd, MMMM Do YYYY');
     const date = moment().format('dddd, MMMM Do YYYY');
 
-    setTemp({ ...weadther, date_ar: date_ar, date: date });
+    setTemp((prev) => ({ ...prev, date_ar, date }));
   }, []);
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
-        setLot(position.coords.longitude);
-        setLat(position.coords.latitude);
-        console.log(position.coords.longitude);
+        setLotAndlat({
+          lat: position.coords.latitude,
+          lot: position.coords.longitude,
+        });
       });
     } else {
       alert("user can't used location");
     }
   }, []);
+
   useEffect(() => {
-    if (lat && lot) {
-      console.log(lat || lot);
-      console.log('using fetechweatherapi');
-      dispatch(fetechwedherapi());
-      axios
-        .get(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lot}&appid=f1c396f97b6a65be8759673895a3b105`,
-          {
-            cancelToken: new axios.CancelToken((c) => {
-              cancelAxios = c;
-            }),
-          },
-        )
-        .then((rep) => {
-          const data = rep.data;
-          console.log(data);
-          setTemp({
-            ...weadther,
-            name: data.name,
-            temps: Math.round(data.main.temp - 272.15),
-            max: Math.round(data.main.temp_max - 272.15),
-            min: Math.round(data.main.temp_min - 272.15),
-            desc: data.weather[0].description,
-            icon: `https://openweathermap.org/payload/api/media/file/${data.weather[0].icon}.png`,
-          });
-        })
-        .catch((error) => {
-          console.log(error);
-        });
-      return () => {
-        console.log('cancelling');
-        if (cancelAxios) cancelAxios();
-      };
+    if (lotAndLat.lat && lotAndLat.lot) {
+      dispatch(fetechwedherapi(lotAndLat));
     }
-  }, [lat, lot]);
+  }, [lotAndLat.lat, lotAndLat.lot]);
+  const weather = useSelector((state) => state.weather.result);
+  useEffect(() => {
+    setTemp((prev) => ({
+      ...prev,
+      name: weather.name,
+      temps: weather.temps,
+      max: weather.max,
+      min: weather.min,
+      desc: weather.desc,
+      icon: weather.icon,
+    }));
+  }, [weather]);
+
   return (
     <>
       <div style={{ background: '#2360df', height: '100vh', width: '100vw' }}>
